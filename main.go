@@ -46,7 +46,7 @@ func main() {
 		case "close":
 			msg.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
 		case "Рассчитать нужное количество баллов на файнале":
-			msg.Text = "Введите значение для term1"
+			msg.Text = "Введите значение для midterm"
 			//msg.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
 			bot.Send(msg)
 		default:
@@ -61,45 +61,43 @@ func main() {
 		update = <-updates
 
 		// Parse the value for term1 from the user's message
-		term1, err := strconv.ParseFloat(update.Message.Text, 64)
+		midterm, err := strconv.ParseFloat(update.Message.Text, 64)
 		if err != nil {
-			msg.Text = "Неверный ввод. Введите числовое значение для term1"
+			msg.Text = "Неверный ввод. Введите числовое значение для midterm"
 			bot.Send(msg)
 			continue
 		}
 
 		// Prompt the user for the value of term2
-		msg.Text = "Введите значение для term2"
+		msg.Text = "Введите значение для endterm"
 		bot.Send(msg)
 		update = <-updates
 
 		// Parse the value for term2 from the user's message
-		term2, err := strconv.ParseFloat(update.Message.Text, 64)
+		endterm, err := strconv.ParseFloat(update.Message.Text, 64)
 		if err != nil {
-			msg.Text = "Неверный ввод. Введите числовое значение для term2"
-			bot.Send(msg)
-			continue
-		}
-
-		// Prompt the user for the value of session
-		msg.Text = "Введите значение для session"
-		bot.Send(msg)
-		update = <-updates
-
-		// Parse the value for session from the user's message
-		session, err := strconv.ParseFloat(update.Message.Text, 64)
-		if err != nil {
-			msg.Text = "Неверный ввод. Введите числовое значение для session"
+			msg.Text = "Неверный ввод. Введите числовое значение для endterm"
 			bot.Send(msg)
 			continue
 		}
 
 		// Calculate the required number of points for the final exam using the given formula
-		final := (term1+term2)/2*0.6 + session*0.4
-		result := strconv.FormatFloat(final, 'f', 2, 64)
+		//final := (term1+term2)/2*0.6 + session*0.4
+		session := (70 - 0.6*((midterm+endterm)/2)) / 0.4
+		result := strconv.FormatFloat(session, 'f', 2, 64)
+		p := endterm + midterm
+
+		if session >= 0 && session <= 50 {
+			msg.Text = "Вам необходимо набрать 50 баллов"
+		} else if p/2 < 50 {
+			msg.Text = "У вас нет допуска к сесии"
+
+		} else {
+			msg.Text = "Требуемое количество баллов для сохранения стипендии: " + result
+		}
 
 		// Send the result back to the user
-		msg.Text = "Требуемое количество баллов на файнале: " + result
+
 		msg.ReplyMarkup = numericKeyboard
 		if _, err := bot.Send(msg); err != nil {
 			log.Panic(err)
