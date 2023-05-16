@@ -2,9 +2,12 @@ package main
 
 import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"io/ioutil"
 	"log"
+	"net/http"
 	"os"
 	"strconv"
+	"time"
 )
 
 var numericKeyboard = tgbotapi.NewReplyKeyboard(
@@ -12,6 +15,16 @@ var numericKeyboard = tgbotapi.NewReplyKeyboard(
 		tgbotapi.NewKeyboardButton("Рассчитать нужное количество баллов на файнале"),
 	),
 )
+
+func sendRequest() {
+	url := "http://example.com/path/to/your/api"
+	response, _ := http.Get(url)
+	bodyBytes, _ := ioutil.ReadAll(response.Body)
+	bodyString := string(bodyBytes)
+	bot, _ := tgbotapi.NewBotAPI("TELEGRAM_APITOKEN")
+	message := tgbotapi.NewMessage(574410740, bodyString)
+	bot.Send(message)
+}
 
 func main() {
 
@@ -34,6 +47,9 @@ func main() {
 	updates := bot.GetUpdatesChan(u)
 
 	for update := range updates {
+		sendRequest()
+		time.Sleep(14 * time.Minute)
+
 		if update.Message == nil { // ignore non-Message updates
 			continue
 		}
