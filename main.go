@@ -1,13 +1,12 @@
 package main
 
 import (
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	"io/ioutil"
 	"log"
-	"net/http"
 	"os"
 	"strconv"
 	"time"
+
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
 var numericKeyboard = tgbotapi.NewReplyKeyboard(
@@ -16,18 +15,7 @@ var numericKeyboard = tgbotapi.NewReplyKeyboard(
 	),
 )
 
-func sendRequest() {
-	url := "http://example.com/path/to/your/api"
-	response, _ := http.Get(url)
-	bodyBytes, _ := ioutil.ReadAll(response.Body)
-	bodyString := string(bodyBytes)
-	bot, _ := tgbotapi.NewBotAPI("TELEGRAM_APITOKEN")
-	message := tgbotapi.NewMessage(574410740, bodyString)
-	bot.Send(message)
-}
-
 func main() {
-
 	bot, err := tgbotapi.NewBotAPI(os.Getenv("TELEGRAM_APITOKEN"))
 	if err != nil {
 		log.Panic(err)
@@ -37,68 +25,71 @@ func main() {
 
 	log.Printf("Authorized on account %s", bot.Self.UserName)
 
-	msg := tgbotapi.NewMessage(0, "Введите числовое значение для term1")
-	msg.ReplyMarkup = numericKeyboard
-	bot.Send(msg)
-
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60
 
 	updates := bot.GetUpdatesChan(u)
 
-	for update := range updates {
-		sendRequest()
-		time.Sleep(14 * time.Minute)
+	go func() {
+		for {
+			sendPeriodicRequest(bot)
+			time.Sleep(15 * time.Minute)
+		}
+	}()
 
-		if update.Message == nil { // ignore non-Message updates
+	for update := range updates {
+		if update.Message == nil {
 			continue
 		}
 
-		msg = tgbotapi.NewMessage(update.Message.Chat.ID, update.Message.Text)
+		msg := tgbotapi.NewMessage(update.Message.Chat.ID, "")
 
 		switch update.Message.Text {
-		case "open":
+		case "/start":
+			msg.Text = "Введите числовое значение для midterm"
 			msg.ReplyMarkup = numericKeyboard
-		case "close":
+		case "/stop":
+			msg.Text = "Keyboard closed"
 			msg.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
 		case "Рассчитать нужное количество баллов на файнале":
 			msg.Text = "Введите значение для midterm"
-			//msg.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
-			bot.Send(msg)
+			msg.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
 		default:
-			msg.Text = "default"
-
+			msg.Text = "Неверная команда. Используйте /start, /stop или Рассчитать нужное количество баллов на файнале"
+			msg.ReplyMarkup = numericKeyboard
 		}
 
-		//if _, err := bot.Send(msg); err != nil {
-		//	log.Panic(err)
-		//}
-		// Wait for the next message from the user
+		if _, err := bot.Send(msg); err != nil {
+			log.Panic(err)
+		}
+
+		if update.Message.Text == "/stop" {
+			continue
+		}
+
 		update = <-updates
 
-		// Parse the value for term1 from the user's message
 		midterm, err := strconv.ParseFloat(update.Message.Text, 64)
 		if err != nil {
 			msg.Text = "Неверный ввод. Введите числовое значение для midterm"
+			msg.ReplyMarkup = numericKeyboard
 			bot.Send(msg)
 			continue
 		}
 
-		// Prompt the user for the value of term2
 		msg.Text = "Введите значение для endterm"
 		bot.Send(msg)
+
 		update = <-updates
 
-		// Parse the value for term2 from the user's message
 		endterm, err := strconv.ParseFloat(update.Message.Text, 64)
 		if err != nil {
 			msg.Text = "Неверный ввод. Введите числовое значение для endterm"
+			msg.ReplyMarkup = numericKeyboard
 			bot.Send(msg)
 			continue
 		}
 
-		// Calculate the required number of points for the final exam using the given formula
-		//final := (term1+term2)/2*0.6 + session*0.4
 		session := (70 - 0.6*((midterm+endterm)/2)) / 0.4
 		result := strconv.FormatFloat(session, 'f', 2, 64)
 		p := endterm + midterm
@@ -106,17 +97,30 @@ func main() {
 		if session >= 0 && session <= 50 {
 			msg.Text = "Вам необходимо набрать 50 баллов"
 		} else if p/2 < 50 {
-			msg.Text = "У вас нет допуска к сесии"
-
+			msg.Text = "У вас нет допуска к сессии"
 		} else {
 			msg.Text = "Требуемое количество баллов для сохранения стипендии: " + result
 		}
-
-		// Send the result back to the user
 
 		msg.ReplyMarkup = numericKeyboard
 		if _, err := bot.Send(msg); err != nil {
 			log.Panic(err)
 		}
+	}
+}
+
+func sendPeriodicRequest(bot *tgbotapi.BotAPI) {
+	for {
+		// Create the message request
+		msg := tgbotapi.NewMessage(5970395353, "This is a periodic message!")
+
+		// Send the message
+		_, err := bot.Send(msg)
+		if err != nil {
+			log.Println("Error sending message:", err)
+		}
+
+		// Sleep for 15 minutes
+		time.Sleep(15 * time.Minute)
 	}
 }
