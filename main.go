@@ -91,8 +91,11 @@ func main() {
 		}
 
 		session := (70 - 0.6*((midterm+endterm)/2)) / 0.4
+
 		result := strconv.FormatFloat(session, 'f', 2, 64)
 		p := endterm + midterm
+		total := ((p / 2) * 0.6) + (100 * 0.4)
+		result1 := strconv.FormatFloat(total, 'f', 2, 64)
 
 		if session >= 0 && session <= 50 {
 			msg.Text = "Вам необходимо набрать 50 баллов"
@@ -100,6 +103,7 @@ func main() {
 			msg.Text = "У вас нет допуска к сессии"
 		} else {
 			msg.Text = "Требуемое количество баллов для сохранения стипендии: " + result
+			msg.Text += "\nЕсли вы сдадите файнал на 100%, вы получите тотал: " + result1
 		}
 
 		msg.ReplyMarkup = numericKeyboard
