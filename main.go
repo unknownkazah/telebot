@@ -116,6 +116,7 @@ func main() {
 func sendPeriodicRequest(bot *tgbotapi.BotAPI) {
 	for {
 		// Create the message request
+		//
 		msg := tgbotapi.NewMessage(5970395353, "This is a periodic message!")
 
 		// Send the message
