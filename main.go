@@ -71,7 +71,7 @@ func main() {
 
 		midterm, err := strconv.ParseFloat(update.Message.Text, 64)
 		if err != nil {
-			msg.Text = "Неверный ввод. Введите числовое значение для midterm"
+			msg.Text = "Неверный ввод. Используйте /start"
 			msg.ReplyMarkup = numericKeyboard
 			bot.Send(msg)
 			continue
@@ -84,7 +84,7 @@ func main() {
 
 		endterm, err := strconv.ParseFloat(update.Message.Text, 64)
 		if err != nil {
-			msg.Text = "Неверный ввод. Введите числовое значение для endterm"
+			msg.Text = "Неверный ввод. Используйте /start"
 			msg.ReplyMarkup = numericKeyboard
 			bot.Send(msg)
 			continue
@@ -118,7 +118,6 @@ func sendPeriodicRequest(bot *tgbotapi.BotAPI) {
 		// Create the message request
 		//
 		msg := tgbotapi.NewMessage(5970395353, "This is a periodic message!")
-
 		// Send the message
 		_, err := bot.Send(msg)
 		if err != nil {
